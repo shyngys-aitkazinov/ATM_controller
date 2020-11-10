@@ -1,2 +1,2 @@
-# ATM_controller
+# ATM controller
 Simple ATM controller
