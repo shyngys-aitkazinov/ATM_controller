@@ -23,9 +23,7 @@ struct Account
 enum customer_state{
     CARD_OUT,
     CARD_IN,
-    REGISTER,
-    LOG_IN,
-    TRANSACTION
+    ACCOUNT_MENU
 };
 
 class AtmController
@@ -57,7 +55,7 @@ public:
      * @param type 0 for deposit, 1 for withdraw, else for see balance
      * @return void
      */
-    void HandleTransaction(int amount, int type);
+    void HandleTransaction(u_long amount, int type);
 
 
     /**
@@ -68,27 +66,30 @@ public:
 
 
 
-
-
-
-
 private:
 
     // stores the accounts
     std::unordered_map<std::string, Account> m_accounts;
     std::string m_welcoming_message = "Hello Dear Customer,\
-        this is simple ATM controller\n\
-        For:\n\
-        -card insertion press C and Enter\n\
-        -program termination press T and Enter\n";
-    std::string m_menu = "Opertations: \
-        -register new user - press N and Enter\n\
-        -login to account - press L and Enter\n\
-        -card removal - press C and Enter\n";
+this is simple ATM controller\n\
+For:\n\
+    -card insertion press C and Enter\n\
+    -program termination press T and Enter\n";
+    std::string m_menu = "Operations: \n \
+    -register new user - press N and Enter\n\
+    -login to account - press L and Enter\n\
+    -card removal - press C and Enter\n";
+    std::string m_acccount_menu = "Operations: \n\
+    -withdraw money - enter W and Amount (e.g. W 200) and Enter\n\
+    -deposit money- enter D and Amount (e.g. D 300) and Enter\n\
+    -show balance  - enter B and Enter\n\
+    -account logout - enter L and Enter\n";
+
     
-    std::pair<int,int> m_parse_transaction(std::string input);
+    std::pair<u_long,int> m_parse_transaction(std::string &input);
 
     std::string m_current_account;
+    // state of the ATM controller
     enum customer_state m_state = CARD_OUT;
 
     

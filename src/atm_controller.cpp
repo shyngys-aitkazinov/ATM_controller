@@ -70,7 +70,7 @@ void AtmController::RegisterAccount(){
         // PIN number
         while(true){
             std::getline(std::cin, pin);
-            if (input.size() != 4){
+            if (pin.size() != 4){
                 // wrong size
                 std::cout<<"-Wrong number of characters\n";
                 std::cout<<"-Please, try again\n";
@@ -78,7 +78,7 @@ void AtmController::RegisterAccount(){
             }
             else{
                 bool temp = false;
-                for (const auto &c: input){
+                for (const auto &c: pin){
                     if (!isdigit(c)){
                         temp = true;
                     }
@@ -127,7 +127,7 @@ bool AtmController::AccountLogin(){
     }
     accounts.reserve(m_accounts.size());
     std::cout<<"-Please, enter one digit which is the 1 to N indicating the position in the following list of accounts\n\
-        -or enter your account number\n";
+-or enter your account number\n";
     std::cout<<"-Enter 0 and Enter, to return back to the menu \n";
     
     for (auto itr = m_accounts.begin(); itr!= m_accounts.end(); itr++)
@@ -148,7 +148,8 @@ bool AtmController::AccountLogin(){
             }
             else{
                 temp_num = std::stoi(input);
-                if (temp_num > 0 && temp_num <= m_accounts.size()){
+                if (temp_num > 0 && (unsigned int) temp_num <= m_accounts.size()){
+                    m_current_account = accounts[temp_num - 1];
                     break;
                 }
                 else if(temp_num == 0){
@@ -164,6 +165,7 @@ bool AtmController::AccountLogin(){
             format = false;
 
             if(m_accounts.find(input)!= m_accounts.end()){
+                m_current_account = input;
                 break;
             }
             else{
@@ -220,7 +222,7 @@ bool AtmController::AccountLogin(){
     
     
 }
-void AtmController::HandleTransaction( int amount, int type){
+void AtmController::HandleTransaction( u_long amount, int type){
 
     auto& temp_account = (m_accounts.find(m_current_account)->second);
     switch (type)
@@ -233,18 +235,182 @@ void AtmController::HandleTransaction( int amount, int type){
     case 1:
         if(temp_account.balance >=amount){
             std::cout<<"-Transaction succeeded\n";
-            std::cout<<"-Current Balance: "<<temp_account.balance<<"\n";
             temp_account.balance -= amount;
+            std::cout<<"-Current Balance: "<<temp_account.balance<<"\n";
         }
         else{
             std::cout<<"-Transaction failed\n";
             std::cout<<"-Current Balance: "<<temp_account.balance<<", but the entered amount is larger\n";
-            temp_account.balance -= amount;
         }
         break;
     default:
+        std::cout<<"-Current Balance: "<<temp_account.balance<<"\n";
         break;
     }
     
     return;
+}
+
+std::pair<u_long, int> AtmController::m_parse_transaction(std::string &input){
+    std::string op, amount;
+    u_long money;
+    if (input.size() == 1)
+    {
+        if (input[0] == 'b' ||input[0] == 'B'){
+            return std::make_pair(0,2);
+        }
+        else if(input[0] == 'L' ||input[0] == 'l'){
+            return std::make_pair(0,-1);
+        }
+        else{
+            std::cout<<"-Invalid input, please try again\n";
+            return std::make_pair(0,-2);
+        }
+    }
+    else{
+        op = input.substr(0, input.find(' '));
+        amount = input.substr(input.find(' ') + 1, input.npos);
+        bool temp = false;
+        for (const auto &c: amount){
+            if (!isdigit(c)){
+                temp = true;
+            }
+        }
+        if(temp){
+            std::cout<<"-Invalid input, please try again\n";
+            return std::make_pair(0,-2);
+        }
+        if (op.size() != 1){
+            std::cout<<"-Invalid input, please try again\n";
+            return std::make_pair(0,-2);
+        }
+        else{
+
+            if (op[0] == 'W' || op[0] == 'w'){
+                money = std::stoi(amount);
+                return std::make_pair(money, 1);
+
+            }
+            else if (op[0] == 'D' || op[0] == 'd'){
+                money = std::stoi(amount);
+                return std::make_pair(money, 0);
+            }
+            else{
+                std::cout<<"-Invalid input, please try again\n";
+                return std::make_pair(0,-2);
+            }
+
+        }
+
+    }
+
+
+}
+
+void AtmController::Run(){
+
+    std::string input;
+    u_long money;
+    int type;
+    std::pair<long unsigned int, int> mt;
+
+    while(true){
+
+        
+    
+        switch (m_state)
+        {
+        case CARD_OUT:
+            std::cout<<m_welcoming_message;
+            std::getline(std::cin, input);
+            if (input.size() == 1){
+                if(input[0] == 'c' ||input[0] == 'C'){
+                    if(InsertAndValidateCard()){
+                        std::cout<<"-The card has been inserted\n";
+                        m_state = CARD_IN;
+                    }
+                    else{
+                        std::cout<<"-The card validation failed\n";
+                    }
+                }
+                else if(input[0] == 't' ||input[0] == 'T'){
+                    return;
+                }
+                else{
+                    std::cout<<"-Invalid input, please try again\n";
+                    std::cout<<"For:\n\
+                        -card insertion press C and Enter\n\
+                        -program termination press T and Enter\n";
+                }
+            }
+            else{
+                std::cout<<"-Invalid input, please try again\n";
+                std::cout<<"For:\n\
+                    -card insertion press C and Enter\n\
+                    -program termination press T and Enter\n";
+            }
+            break;
+        case CARD_IN:
+            std::cout<<m_menu;
+            std::getline(std::cin, input);
+            if (input.size() == 1){
+                if(input[0] == 'n' ||input[0] == 'N'){
+                    RegisterAccount();
+                }
+                else if(input[0] == 'l' ||input[0] == 'L'){
+                    if (AccountLogin()){
+                        m_state = ACCOUNT_MENU;
+                    }
+                }
+                else if(input[0] == 'c' ||input[0] == 'C'){
+                    m_state = CARD_OUT;
+                }
+                else{
+                    std::cout<<"-Invalid input, please try again\n";
+                    std::cout<<m_menu;
+
+                }
+            }
+            else{
+                std::cout<<"-Invalid input, please try again\n";
+                std::cout<<m_menu;
+            }
+            break;
+        case ACCOUNT_MENU:
+            std::cout<<m_acccount_menu;
+            std::getline(std::cin, input);
+            mt = m_parse_transaction(input);
+            money = mt.first;
+            type = mt.second;
+            switch (type)
+            {
+            case -2:
+                break;
+            case -1:
+                m_state = CARD_IN;
+                break;
+            case 0:
+                HandleTransaction(money, 0);
+                break;
+            case 1:
+                HandleTransaction(money, 1);
+                break;
+            case 2:
+                HandleTransaction(money, 2);
+                break;
+            default:
+                break;
+            }
+            
+            
+            break;
+
+        default:
+            break;
+        }
+
+    }
+
+    
+
 }
